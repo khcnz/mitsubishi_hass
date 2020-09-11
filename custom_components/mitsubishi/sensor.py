@@ -25,7 +25,6 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             MitsubishiClimateSensor(mitsubishi_api, sensor, hass.config.units, config.get(CONF_NAME))
             for sensor in sensors
         ]
-
     )
 
 
@@ -63,18 +62,17 @@ class MitsubishiClimateSensor(Entity):
     def state(self):
         """Return the state of the sensor."""
 
+        temperature = None
         if self._device_attribute == ATTR_INSIDE_TEMPERATURE:
-            if self._api.roomTemperature == 126 or self._api.roomTemperature == None:
-               return 'unavailable'
-            else:
-               return self._api.roomTemperature
+            temperature = self._api.roomTemperature
 
-        if self._device_attribute == ATTR_OUTSIDE_TEMPERATURE:
-            if self._api.outdoorTemperature == 126 or self._api.outdoorTemperature == None:
-               return 'unavailable'
-            else:
-               return self._api.outdoorTemperature
-        return None
+        elif self._device_attribute == ATTR_OUTSIDE_TEMPERATURE:
+            temperature = self._api.outdoorTemperature
+            
+        if temperature == None:
+            return 'unavailable'
+        else:
+            return temperature
 
     @property
     def unit_of_measurement(self):
@@ -85,9 +83,8 @@ class MitsubishiClimateSensor(Entity):
         """Retrieve latest state."""
         try:
             await self.hass.async_add_executor_job(self._api.update)
-            ## self._api.getOutdoorTemperature()
         except KeyError:
-           _LOGGER.warning("HA requested an update from HVAC %s but no data was received", self._api.netif)
+            _LOGGER.warning("HA requested an update from HVAC %s but no data was received", self._api.netif)
 
     # @property
     # def device_info(self):
